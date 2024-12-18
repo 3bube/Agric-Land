@@ -227,7 +227,10 @@ const SidebarContent = ({
         <NavItem
           key={link.name}
           icon={link.icon}
-          onClick={() => navigate(link.path)}
+          onClick={() => {
+            navigate(link.path);
+            onClose();
+          }}
         >
           {link.name}
         </NavItem>
