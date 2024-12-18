@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SearchableListings } from "@/components/Searchbar";
+import { SearchableListings } from "@/components/SearchableListings";
 import { InquiryTracker } from "@/components/InquiryTracker";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { FavoritesSection } from "@/components/FavoriteSection";

@@ -1,12 +1,13 @@
 import { Route, Routes, Navigate } from "react-router-dom";
 import Auth from "@/pages/auth";
 import FarmerDashboard from "@/pages/FarmerDashboard";
+import LandOwnerDashboard from "@/pages/LandOwner";
 import DashboardLayout from "@/components/Layout";
 import { InquiryTracker } from "@/components/InquiryTracker";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { FavoritesSection } from "@/components/FavoriteSection";
 import ProtectedRoute from "@/components/ProtectedRoute";
-
+import { ManageListings } from "@/components/ManageListing";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -38,9 +39,10 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
-        <Route index element={<div>Landowner Dashboard</div>} />
-        <Route path="listings" element={<div>My Listings</div>} />
-        <Route path="inquiries" element={<InquiryTracker />} />
+        <Route index element={<LandOwnerDashboard />} />
+        <Route path="listings" element={<ManageListings />} />
+        {/* <Route path="inquiries" element={<InquiryTracker />} /> */}
+        {/* <Route path="notifications" element={<NotificationCenter />} /> */}
       </Route>
 
       {/* Catch all route */}

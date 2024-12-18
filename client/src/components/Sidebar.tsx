@@ -51,7 +51,11 @@ const getFarmerLinks = (): Array<LinkItemProps> => [
 ];
 
 const getLandownerLinks = (): Array<LinkItemProps> => [
-  { name: "Dashboard", icon: Home, path: "/dashboard/landowner" },
+  {
+    name: "Manage Listings",
+    icon: Home,
+    path: "/dashboard/landowner/listings",
+  },
   { name: "My Listings", icon: Bell, path: "/dashboard/landowner/listings" },
   { name: "Inquiries", icon: Bell, path: "/dashboard/landowner/inquiries" },
   { name: "Settings", icon: Settings, path: "/settings" },
@@ -219,7 +223,7 @@ const SidebarContent = ({
     >
       <Flex h="20" alignItems="center" mx="8" justifyContent="space-between">
         <Text fontSize="2xl" fontFamily="monospace" fontWeight="bold">
-          AgricLand
+          👨🏾‍🌾AgricLand
         </Text>
         <CloseButton display={{ base: "flex", md: "none" }} onClick={onClose} />
       </Flex>
