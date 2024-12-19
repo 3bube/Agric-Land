@@ -33,8 +33,9 @@ import {
   InputLeftElement,
   Heading,
   Divider,
+  Spinner,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   MapPin,
   DollarSign,
@@ -44,56 +45,85 @@ import {
   Search,
   Filter,
 } from "lucide-react";
+import InputImage from "./uploadImage";
+import { useQuery } from "@tanstack/react-query";
+import {
+  createLand,
+  getLandsByOwner,
+  changeLandStatus,
+  deleteLand,
+} from "@/utils/land.utils";
 
 interface Listing {
-  id: number;
+  ownerId: number;
   title: string;
   location: string;
-  price: number;
+  features: string[];
+  rentalCost: number;
   size: number;
-  status: "Available" | "Rented" | "Under Maintenance";
+  status: "available" | "rented" | "under-maintenance";
   imageUrl?: string;
   description?: string;
+  image?: any;
 }
-
-const initialListings: Listing[] = [
-  {
-    id: 1,
-    title: "Fertile Farmland",
-    location: "Lagos State",
-    price: 50000,
-    size: 10,
-    status: "Available",
-    imageUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef",
-    description: "Perfect for crop farming with rich soil and good irrigation.",
-  },
-  {
-    id: 2,
-    title: "Rice Plantation",
-    location: "Abuja",
-    price: 75000,
-    size: 15,
-    status: "Rented",
-    imageUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef",
-    description: "Ideal for rice cultivation with water resources.",
-  },
-];
 
 export function ManageListings() {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [listings, setListings] = useState<Listing[]>(initialListings);
+  const user = JSON.parse(sessionStorage.getItem("user") ?? "{}");
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["lands", user._id],
+    queryFn: async () => getLandsByOwner(user._id),
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
+  const [listings, setListings] = useState<Listing[]>([]);
   const [newListing, setNewListing] = useState<Partial<Listing>>({});
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState<boolean>(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const toast = useToast();
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
+  const FEATURES = [
+    "Irrigation System",
+    "Rich Soil",
+    "Road Access",
+    "Water Resources",
+    "Flat Terrain",
+    "Security",
+  ];
 
-  const handleCreateListing = () => {
+  useEffect(() => {
+    if (data) {
+      setListings(data);
+    }
+  }, [data]);
+
+  if (isLoading) {
+    return (
+      <Flex
+        direction={"column"}
+        alignItems={"center"}
+        justify={"center"}
+        position={"fixed"}
+        top={0}
+        bottom={0}
+        left={0}
+        right={0}
+        zIndex={100}
+      >
+        <Spinner size={{ base: "sm", md: "lg" }} />
+        <Text>Loading...</Text>
+      </Flex>
+    );
+  }
+
+  const handleCreateListing = async () => {
     if (
       !newListing.title ||
       !newListing.location ||
-      !newListing.price ||
+      !newListing.rentalCost ||
       !newListing.size
     ) {
       toast({
@@ -106,55 +136,96 @@ export function ManageListings() {
       return;
     }
 
+    setLoading(true);
+
     const listing: Listing = {
-      id: listings.length + 1,
+      ownerId: user._id,
       title: newListing.title,
       location: newListing.location,
-      price: newListing.price,
+      rentalCost: newListing.rentalCost,
       size: newListing.size,
-      status: newListing.status || "Available",
+      status: newListing.status?.toLowerCase() ?? "available",
       description: newListing.description,
+      features: newListing.features,
+      image: newListing.image,
     };
 
-    setListings([...listings, listing]);
-    setNewListing({});
-    onClose();
-    toast({
-      title: "Success",
-      description: "Listing created successfully",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
+    try {
+      await createLand(listing);
+      refetch();
+      setNewListing({});
+      onClose();
+      toast({
+        title: "Success",
+        description: "Listing created successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to create listing",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDeleteListing = (id: number) => {
-    setListings(listings.filter((listing) => listing.id !== id));
-    toast({
-      title: "Deleted",
-      description: "Listing has been removed",
-      status: "info",
-      duration: 3000,
-      isClosable: true,
-    });
+  const handleDeleteListing = async (id: number) => {
+    try {
+      await deleteLand(id);
+      refetch();
+      toast({
+        title: "Deleted",
+        description: "Listing has been removed",
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to delete listing",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
-  const handleStatusChange = (id: number, newStatus: Listing["status"]) => {
-    setListings(
-      listings.map((listing) =>
-        listing.id === id ? { ...listing, status: newStatus } : listing
-      )
-    );
-    toast({
-      title: "Updated",
-      description: "Listing status has been updated",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
+  const handleStatusChange = async (
+    id: number,
+    newStatus: Listing["status"]
+  ) => {
+    try {
+      await changeLandStatus(newStatus, id);
+      refetch();
+      toast({
+        title: "Updated",
+        description: "Listing status has been updated",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Failed to update listing status",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
-  const filteredListings = listings.filter((listing) => {
+  const filteredListings = listings?.filter((listing) => {
     const matchesSearch =
       listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       listing.location.toLowerCase().includes(searchTerm.toLowerCase());
@@ -165,11 +236,11 @@ export function ManageListings() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Available":
+      case "available":
         return "green";
-      case "Rented":
+      case "rented":
         return "blue";
-      case "Under Maintenance":
+      case "under-maintenance":
         return "orange";
       default:
         return "gray";
@@ -177,7 +248,7 @@ export function ManageListings() {
   };
 
   return (
-    <Box bg={useColorModeValue("white", "gray.900")} minH="100vh" p={4}>
+    <Box bg={useColorModeValue("white", "gray.900")}>
       <VStack spacing={6} align="stretch">
         <Flex justify="space-between" align="center">
           <Heading size="lg">Manage Listings</Heading>
@@ -205,19 +276,19 @@ export function ManageListings() {
             maxW="200px"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            leftElement={<Filter className="ml-3 h-4 w-4 text-gray-400" />}
+            icon={<Filter className="h-4 w-4 text-gray-400" />}
           >
             <option value="all">All Status</option>
-            <option value="Available">Available</option>
-            <option value="Rented">Rented</option>
-            <option value="Under Maintenance">Under Maintenance</option>
+            <option value="available">Available</option>
+            <option value="rented">Rented</option>
+            <option value="under-maintenance">Under Maintenance</option>
           </Select>
         </Flex>
 
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-          {filteredListings.map((listing) => (
+          {filteredListings?.map((listing) => (
             <Card
-              key={listing.id}
+              key={listing._id}
               bg={bgColor}
               borderWidth="1px"
               borderColor={borderColor}
@@ -226,10 +297,10 @@ export function ManageListings() {
               transition="all 0.2s"
               _hover={{ shadow: "lg" }}
             >
-              {listing.imageUrl && (
+              {listing.image && (
                 <Box h="200px" overflow="hidden">
                   <img
-                    src={listing.imageUrl}
+                    src={listing.image}
                     alt={listing.title}
                     style={{
                       width: "100%",
@@ -255,28 +326,28 @@ export function ManageListings() {
                       <MenuList>
                         <MenuItem
                           onClick={() =>
-                            handleStatusChange(listing.id, "Available")
+                            handleStatusChange(listing._id, "available")
                           }
                         >
                           Mark Available
                         </MenuItem>
                         <MenuItem
                           onClick={() =>
-                            handleStatusChange(listing.id, "Rented")
+                            handleStatusChange(listing._id, "rented")
                           }
                         >
                           Mark Rented
                         </MenuItem>
                         <MenuItem
                           onClick={() =>
-                            handleStatusChange(listing.id, "Under Maintenance")
+                            handleStatusChange(listing._id, "under-maintenance")
                           }
                         >
                           Mark Under Maintenance
                         </MenuItem>
                         <Divider />
                         <MenuItem
-                          onClick={() => handleDeleteListing(listing.id)}
+                          onClick={() => handleDeleteListing(listing._id)}
                           color="red.500"
                         >
                           Delete Listing
@@ -284,6 +355,21 @@ export function ManageListings() {
                       </MenuList>
                     </Menu>
                   </Flex>
+
+                  {listing.features.length > 0 && (
+                    <HStack spacing={2}>
+                      {listing.features.map((feature) => (
+                        <Badge
+                          key={feature}
+                          colorScheme="green"
+                          rounded="lg"
+                          variant="solid"
+                        >
+                          {feature}
+                        </Badge>
+                      ))}
+                    </HStack>
+                  )}
 
                   <Badge
                     colorScheme={getStatusColor(listing.status)}
@@ -299,7 +385,7 @@ export function ManageListings() {
                     </HStack>
                     <HStack>
                       <DollarSign className="h-4 w-4" />
-                      <Text>₦{listing.price.toLocaleString()}/year</Text>
+                      <Text>₦{listing.rentalCost?.toLocaleString()}/year</Text>
                     </HStack>
                     <HStack>
                       <Maximize2 className="h-4 w-4" />
@@ -318,6 +404,7 @@ export function ManageListings() {
           ))}
         </SimpleGrid>
 
+        {/* Modal */}
         <Modal isOpen={isOpen} onClose={onClose} size="xl">
           <ModalOverlay />
           <ModalContent>
@@ -351,11 +438,11 @@ export function ManageListings() {
                     <Input
                       type="number"
                       placeholder="Enter price"
-                      value={newListing.price || ""}
+                      value={newListing.rentalCost || ""}
                       onChange={(e) =>
                         setNewListing({
                           ...newListing,
-                          price: Number(e.target.value),
+                          rentalCost: Number(e.target.value),
                         })
                       }
                     />
@@ -375,6 +462,57 @@ export function ManageListings() {
                     />
                   </FormControl>
                 </SimpleGrid>
+                <FormControl>
+                  <FormLabel>Features</FormLabel>
+                  <HStack wrap="wrap" justify="start">
+                    {newListing.features?.map((feature) => (
+                      <Badge
+                        key={feature}
+                        variant="solid"
+                        rounded="lg"
+                        cursor={"pointer"}
+                        colorScheme="blue"
+                        mr={2}
+                        mb={2}
+                        onClick={() =>
+                          setNewListing({
+                            ...newListing,
+                            features: newListing.features?.filter(
+                              (f) => f !== feature
+                            ),
+                          })
+                        }
+                      >
+                        {feature}
+                      </Badge>
+                    ))}
+
+                    {FEATURES.filter(
+                      (feature) => !newListing.features?.includes(feature)
+                    ).map((feature) => (
+                      <Badge
+                        key={feature}
+                        variant="outline"
+                        cursor="pointer"
+                        rounded="lg"
+                        colorScheme="blue"
+                        mr={2}
+                        mb={2}
+                        onClick={() =>
+                          setNewListing({
+                            ...newListing,
+                            features: newListing.features
+                              ? [...newListing.features, feature]
+                              : [feature],
+                          })
+                        }
+                      >
+                        {feature}
+                      </Badge>
+                    ))}
+                  </HStack>
+                </FormControl>
+
                 <FormControl>
                   <FormLabel>Description</FormLabel>
                   <Input
@@ -403,8 +541,16 @@ export function ManageListings() {
                   >
                     <option value="Available">Available</option>
                     <option value="Rented">Rented</option>
-                    <option value="Under Maintenance">Under Maintenance</option>
+                    <option value="Under-Maintenance">Under Maintenance</option>
                   </Select>
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Images</FormLabel>
+                  <InputImage
+                    setNewListing={setNewListing}
+                    newListing={newListing}
+                  />
                 </FormControl>
               </Stack>
             </ModalBody>
@@ -412,7 +558,11 @@ export function ManageListings() {
               <Button variant="ghost" mr={3} onClick={onClose}>
                 Cancel
               </Button>
-              <Button colorScheme="blue" onClick={handleCreateListing}>
+              <Button
+                isLoading={loading}
+                colorScheme="blue"
+                onClick={handleCreateListing}
+              >
                 Create Listing
               </Button>
             </ModalFooter>

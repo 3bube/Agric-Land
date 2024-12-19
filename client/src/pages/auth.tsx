@@ -60,7 +60,9 @@ export default function Auth() {
     setLoading(true);
     try {
       const data = await login({ email, password });
-      dispatch({ type: "LOGIN", payload: data });
+      if (data) {
+        dispatch({ type: "LOGIN", payload: data });
+      }
       navigate(`/dashboard/${data.user.role}`);
     } catch (error: any) {
       toast({

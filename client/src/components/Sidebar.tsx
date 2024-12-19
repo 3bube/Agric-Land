@@ -19,9 +19,6 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  InputGroup,
-  InputLeftElement,
-  Input,
   Circle,
   MenuDivider,
 } from "@chakra-ui/react";
@@ -31,8 +28,8 @@ import {
   Heart,
   Settings,
   Menu as MenuIcon,
-  Search,
   LogOut,
+  ChartArea,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -52,12 +49,17 @@ const getFarmerLinks = (): Array<LinkItemProps> => [
 
 const getLandownerLinks = (): Array<LinkItemProps> => [
   {
-    name: "Manage Listings",
+    name: "Dashboard",
     icon: Home,
-    path: "/dashboard/landowner/listings",
+    path: "/dashboard/landowner",
   },
-  { name: "My Listings", icon: Bell, path: "/dashboard/landowner/listings" },
+  // { name: "My Listings", icon: Bell, path: "/dashboard/landowner/listings" },
   { name: "Inquiries", icon: Bell, path: "/dashboard/landowner/inquiries" },
+  {
+    name: "Analytics",
+    icon: ChartArea,
+    path: "/dashboard/landowner/analytics",
+  },
   { name: "Settings", icon: Settings, path: "/settings" },
 ];
 
@@ -71,6 +73,8 @@ export default function Sidebar({ children }: SidebarProps) {
 
   const LinkItems =
     state.user?.role === "farmer" ? getFarmerLinks() : getLandownerLinks();
+
+  const navigate = useNavigate();
 
   return (
     <Box minH="100vh" bg={useColorModeValue("white", "gray.900")}>
@@ -126,20 +130,6 @@ export default function Sidebar({ children }: SidebarProps) {
         </Flex>
 
         <Flex alignItems="center" gap={4}>
-          <InputGroup maxW="xs" display={{ base: "none", md: "flex" }}>
-            <InputLeftElement pointerEvents="none">
-              <Search className="h-4 w-4 text-gray-400" />
-            </InputLeftElement>
-            <Input placeholder="Search..." rounded="full" />
-          </InputGroup>
-
-          <IconButton
-            variant="ghost"
-            aria-label="Search"
-            icon={<Search />}
-            display={{ base: "flex", md: "none" }}
-          />
-
           <Menu>
             <MenuButton
               as={IconButton}
@@ -183,7 +173,10 @@ export default function Sidebar({ children }: SidebarProps) {
               <MenuDivider />
               <MenuItem
                 icon={<LogOut className="h-4 w-4" />}
-                onClick={() => dispatch({ type: "LOGOUT" })}
+                onClick={() => {
+                  navigate("/auth");
+                  dispatch({ type: "LOGOUT" });
+                }}
               >
                 Logout
               </MenuItem>

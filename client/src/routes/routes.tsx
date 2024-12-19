@@ -4,10 +4,11 @@ import FarmerDashboard from "@/pages/FarmerDashboard";
 import LandOwnerDashboard from "@/pages/LandOwner";
 import DashboardLayout from "@/components/Layout";
 import { InquiryTracker } from "@/components/InquiryTracker";
+import LandOwnerInquiries from "@/pages/LandOwnerInquiries";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { FavoritesSection } from "@/components/FavoriteSection";
+import Analytics from "@/components/Analytics";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { ManageListings } from "@/components/ManageListing";
 const AppRoutes = () => {
   return (
     <Routes>
@@ -40,9 +41,9 @@ const AppRoutes = () => {
         }
       >
         <Route index element={<LandOwnerDashboard />} />
-        <Route path="listings" element={<ManageListings />} />
-        {/* <Route path="inquiries" element={<InquiryTracker />} /> */}
+        <Route path="inquiries" element={<LandOwnerInquiries />} />
         {/* <Route path="notifications" element={<NotificationCenter />} /> */}
+        <Route path="analytics" element={<Analytics />} />
       </Route>
 
       {/* Catch all route */}

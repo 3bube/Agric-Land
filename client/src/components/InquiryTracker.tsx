@@ -11,6 +11,9 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 
+import { getInquiresForFarmer } from "@/utils/inquiry.utils";
+import { useQuery } from "@tanstack/react-query";
+
 interface Inquiry {
   id: number;
   listingTitle: string;
@@ -44,35 +47,49 @@ const mockInquiries: Inquiry[] = [
 ];
 
 export function InquiryTracker() {
+  const user = JSON.parse(sessionStorage.getItem("user") ?? "{}");
+
+  const { data: inquiries } = useQuery({
+    queryKey: ["inquiries", "farmer"],
+    queryFn: () => getInquiresForFarmer(user._id),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  console.log(inquiries);
+
   return (
     <Box className="space-y-6">
       <Heading as="h2" size="lg" fontWeight="bold">
         Your Inquiries
       </Heading>
-      {mockInquiries.map((inquiry) => (
-        <Card key={inquiry.id} variant="outline">
+      {inquiries.map((inquiry) => (
+        <Card key={inquiry._id} variant="outline">
           <CardHeader>
             <Heading as="h5" size="sm">
-              {inquiry.listingTitle}
+              {inquiry.land.title}
             </Heading>
             <Text color={useColorModeValue("gray.600", "gray.400")}>
-              Landowner: {inquiry.landowner}
+              Landowner: {inquiry.land.ownerId.name}
             </Text>
           </CardHeader>
           <CardBody>
+            <Text color={useColorModeValue("gray.600", "gray.400")} mb={2}>
+              Inquiry: {inquiry.message}
+            </Text>
+
             <Flex justify="space-between" align="center">
               <Button
                 variant={
-                  inquiry.status === "Pending"
+                  inquiry.status === "pending"
                     ? "outline"
-                    : inquiry.status === "Approved"
+                    : inquiry.status === "accepted"
                     ? "solid"
                     : "ghost"
                 }
                 colorScheme={
-                  inquiry.status === "Pending"
+                  inquiry.status === "pending"
                     ? "blue"
-                    : inquiry.status === "Approved"
+                    : inquiry.status === "accepted"
                     ? "green"
                     : "red"
                 }

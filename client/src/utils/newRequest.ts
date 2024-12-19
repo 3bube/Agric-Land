@@ -2,13 +2,12 @@ import axios from "axios";
 
 const newRequest = axios.create({
   baseURL: "http://localhost:5000/api",
+  withCredentials: true,
 });
 
-axios.interceptors.request.use(
+newRequest.interceptors.request.use(
   (config) => {
-    const token =
-      JSON.parse(sessionStorage.getItem("token") ?? "") ??
-      sessionStorage.getItem("token");
+    const token = sessionStorage.getItem("token") ?? "";
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

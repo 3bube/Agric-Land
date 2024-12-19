@@ -1,12 +1,10 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api/auth';
+import newRequest from "./newRequest";
 
 interface RegisterData {
   name: string;
   email: string;
   password: string;
-  role: 'farmer' | 'landowner';
+  role: "farmer" | "landowner";
 }
 
 interface LoginData {
@@ -15,11 +13,15 @@ interface LoginData {
 }
 
 export const register = async (data: RegisterData) => {
-  const response = await axios.post(`${API_URL}/register`, data);
+  const response = await newRequest.post(`/auth/register`, data);
   return response.data;
 };
 
 export const login = async (data: LoginData) => {
-  const response = await axios.post(`${API_URL}/login`, data);
-  return response.data;
+  try {
+    const response = await newRequest.post(`/auth/login`, data);
+    return response.data;
+  } catch (error) {
+    console.error(error);
+  }
 };

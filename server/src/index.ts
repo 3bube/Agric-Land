@@ -2,6 +2,8 @@ import express, { Express, Request, Response } from "express";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import { createServer } from "http";
+import { WebSocketServer } from "./websocket";
 
 dotenv.config();
 const app: Express = express();
@@ -38,11 +40,31 @@ const connectToMongoDB = async () => {
 };
 
 import authRoute from "../routes/auth.route";
+import landRoute from "../routes/land.route";
+import favoriteRoute from "../routes/favorites.route";
+import inquiryRoute from "../routes/inquiry.route";
+import chatRoute from "../routes/chat.route";
 
 app.use("/api/auth", authRoute);
+app.use("/api/land", landRoute);
+app.use("/api/favorite", favoriteRoute);
+app.use("/api/inquiry", inquiryRoute);
+app.use("/api/chat", chatRoute);
+
+// Create HTTP server
+const httpServer = createServer(app);
+
+// Initialize WebSocket server
+const wsServer = new WebSocketServer(httpServer);
+app.set("io", wsServer);
 
 // Start server
-app.listen(port, async () => {
-  console.log(`Server is running on port ${port}`);
-  await connectToMongoDB();
+httpServer.listen(port, async () => {
+  try {
+    await connectToMongoDB();
+    console.log(`Server is running on port ${port}`);
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
 });

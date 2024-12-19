@@ -1,13 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  Box,
-  Flex,
-  Spinner,
-  Text,
-  useColorModeValue,
-} from "@chakra-ui/react";
+import { Box, Flex, Spinner, Text, useColorModeValue } from "@chakra-ui/react";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -49,7 +43,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   }
 
   // If roles are specified, check if user has required role
-  if (allowedRoles && !allowedRoles.includes(state.user.role)) {
+  if (allowedRoles && !allowedRoles.includes(state.user?.role)) {
     return (
       <Box
         minH="100vh"
