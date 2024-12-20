@@ -19,6 +19,7 @@ const corsOptions = {
       "http://localhost:5173",
       "https://agric-land.vercel.app",
       "https://www.agric-land.vercel.app",
+      "https://agric-land-backend.vercel.app"
     ];
 
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
