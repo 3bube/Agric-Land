@@ -4,7 +4,7 @@ import {
   removeFavorite,
 } from "../controllers/favorites.controller";
 import { Router } from "express";
-import authMiddleware from "@/middleware/auth.middleware";
+import authMiddleware from "../middleware/auth.middleware";
 
 const router = Router();
 

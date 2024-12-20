@@ -32,9 +32,10 @@ import {
   Settings,
   Menu as MenuIcon,
   LogOut,
-  ChartArea,
+  BarChart,
   MessageCircle,
   FileText,
+  ChartArea,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -67,7 +68,7 @@ const getLandownerLinks = (): Array<LinkItemProps> => [
   { name: "Inquiries", icon: Bell, path: "/dashboard/landowner/inquiries" },
   {
     name: "Analytics",
-    icon: ChartArea,
+    icon: BarChart,
     path: "/dashboard/landowner/analytics",
   },
   {

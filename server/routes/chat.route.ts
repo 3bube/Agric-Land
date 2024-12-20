@@ -6,7 +6,7 @@ import {
   getUserChats,
   markMessageAsRead,
 } from "../controllers/chat.controller";
-import authMiddleware from "@/middleware/auth.middleware";
+import authMiddleware from "../middleware/auth.middleware";
 
 const router = Router();
 

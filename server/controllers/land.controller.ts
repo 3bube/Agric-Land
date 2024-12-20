@@ -1,5 +1,5 @@
 import Land from "../models/land.model";
-import User from "../models/user.model";
+// import User from "../models/user.model";
 import { Request, Response, NextFunction } from "express";
 import { handleError, handleSuccess, handleNotFound } from "../utils/handler";
 
