@@ -1,7 +1,11 @@
 import axios from "axios";
 
+const isDevelopment = window.location.hostname === "localhost";
+
 const newRequest = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: isDevelopment
+    ? "http://localhost:5000/api"
+    : "https://agric-land-backend.vercel.app/api",
   withCredentials: true,
 });
 
