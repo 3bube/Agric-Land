@@ -1,15 +1,24 @@
+import { Router } from "express";
 import {
   createInquiry,
-  getInquiresForLandOwner,
-  getInquiresForFarmer,
+  getInquiriesForFarmer,
+  getInquiriesForLandOwner,
+  updateInquiryStatus,
 } from "../controllers/inquiry.controller";
-import { Router } from "express";
-import authMiddleware from "@/middleware/auth.middleware";
+import authMiddleware from "../middleware/auth.middleware";
 
 const router = Router();
 
+// Create a new inquiry
 router.post("/create", authMiddleware, createInquiry);
-router.get("/landOwner/:landOwnerId", authMiddleware, getInquiresForLandOwner);
-router.get("/farmer/:farmerId", authMiddleware, getInquiresForFarmer);
+
+// Get inquiries for a farmer
+router.get("/farmer/:farmerId", authMiddleware, getInquiriesForFarmer);
+
+// Get inquiries for a landowner
+router.get("/landowner", authMiddleware, getInquiriesForLandOwner);
+
+// Update inquiry status
+router.put("/:inquiryId/status", authMiddleware, updateInquiryStatus);
 
 export default router;

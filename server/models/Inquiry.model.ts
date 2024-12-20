@@ -2,18 +2,27 @@ import { Schema, model } from "mongoose";
 
 const InquirySchema = new Schema(
   {
-    land: { type: Schema.Types.ObjectId, ref: "Land", required: true },
-    farmer: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    message: { type: String },
+    farmer: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    land: {
+      type: Schema.Types.ObjectId,
+      ref: "Land",
+      required: true,
+    },
+    message: {
+      type: String,
+      required: true,
+    },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "accepted", "rejected"],
       default: "pending",
     },
   },
   { timestamps: true }
 );
 
-const Inquiry = model("Inquiry", InquirySchema);
-
-export default Inquiry;
+export default model("Inquiry", InquirySchema);

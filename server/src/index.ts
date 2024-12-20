@@ -44,12 +44,16 @@ import landRoute from "../routes/land.route";
 import favoriteRoute from "../routes/favorites.route";
 import inquiryRoute from "../routes/inquiry.route";
 import chatRoute from "../routes/chat.route";
+import notificationRoute from "../routes/notification.route";
+import rentalRoute from "../routes/rental.route";
 
 app.use("/api/auth", authRoute);
 app.use("/api/land", landRoute);
 app.use("/api/favorite", favoriteRoute);
 app.use("/api/inquiry", inquiryRoute);
 app.use("/api/chat", chatRoute);
+app.use("/api/notifications", notificationRoute);
+app.use("/api/rentals", rentalRoute);
 
 // Create HTTP server
 const httpServer = createServer(app);

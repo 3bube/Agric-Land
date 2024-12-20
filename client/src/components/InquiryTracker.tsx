@@ -49,20 +49,22 @@ const mockInquiries: Inquiry[] = [
 export function InquiryTracker() {
   const user = JSON.parse(sessionStorage.getItem("user") ?? "{}");
 
-  const { data: inquiries } = useQuery({
+  const { data: inquiries, isLoading } = useQuery({
     queryKey: ["inquiries", "farmer"],
     queryFn: () => getInquiresForFarmer(user._id),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  console.log(inquiries);
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Box className="space-y-6">
       <Heading as="h2" size="lg" fontWeight="bold">
         Your Inquiries
       </Heading>
-      {inquiries.map((inquiry) => (
+      {inquiries?.map((inquiry) => (
         <Card key={inquiry._id} variant="outline">
           <CardHeader>
             <Heading as="h5" size="sm">

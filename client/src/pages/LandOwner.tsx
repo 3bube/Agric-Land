@@ -10,7 +10,7 @@ export default function LandOwnerDashboard() {
   const [currentView, setCurrentView] = useState<View>("listings");
 
   return (
-    <div className="flex h-screen bg-white ">
+    <div className="flex  bg-white overflow-hidden ">
       <main className="flex-1 overflow-y-auto p-8">
         <h1 className="text-3xl font-bold mb-6">Landowner's Dashboard</h1>
         {currentView === "listings" && <ManageListings />}

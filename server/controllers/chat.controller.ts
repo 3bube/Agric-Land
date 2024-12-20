@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { Chat, Message } from "../models/chat.model";
+import Notification from "../models/notification.model";
 import { handleError, handleSuccess, handleNotFound } from "../utils/handler";
 
 export const createOrGetChat = async (
@@ -9,7 +10,7 @@ export const createOrGetChat = async (
 ) => {
   try {
     const { participantId } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     // Check if chat already exists
     let chat = await Chat.findOne({
@@ -38,30 +39,35 @@ export const sendMessage = async (
 ) => {
   try {
     const { chatId, content } = req.body;
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const chat = await Chat.findById(chatId);
+
     if (!chat) {
       return handleNotFound(res, "Chat not found", next);
     }
 
+    // Find the receiver ID (the participant that is not the sender)
+    const receiverId = chat.participants.find(
+      (participantId) => participantId.toString() !== userId.toString()
+    );
+
+    if (!receiverId) {
+      return handleError(new Error("Receiver not found in chat"), res, next);
+    }
+
     const message = new Message({
       sender: userId,
-      receiver: chat.participants.find((p) => p.toString() !== userId),
+      receiver: receiverId,
       content,
     });
 
     chat.messages.push(message);
-    chat.lastMessage = message._id;
+    chat.lastMessage = message.content;
     await chat.save();
-
     // Emit socket event for real-time updates
     const io = req.app.get("io");
-    const receiverId = chat.participants.find(
-      (p) => p.toString() !== userId
-    );
-    
-    if (io && receiverId) {
+    if (io) {
       io.emitToUser(receiverId.toString(), "new_message", {
         chatId,
         message: {
@@ -69,6 +75,24 @@ export const sendMessage = async (
           sender: { _id: userId },
         },
       });
+
+      // Create notification for the message
+      const notification = new Notification({
+        sender: userId,
+        receiver: receiverId,
+        type: "new_message",
+        content,
+        data: {
+          chatId,
+          message: {
+            ...message.toJSON(),
+            sender: { _id: userId },
+          },
+        },
+      });
+
+      await notification.save();
+      io.emitToUser(receiverId.toString(), "new_notification");
     }
 
     handleSuccess(message, res);

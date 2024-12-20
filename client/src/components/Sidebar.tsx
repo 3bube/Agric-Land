@@ -21,6 +21,9 @@ import {
   MenuItem,
   Circle,
   MenuDivider,
+  VStack,
+  Badge,
+  HStack,
 } from "@chakra-ui/react";
 import {
   Bell,
@@ -30,21 +33,28 @@ import {
   Menu as MenuIcon,
   LogOut,
   ChartArea,
+  MessageCircle,
+  FileText,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { getNotifications } from "@/utils/notification.utils";
 
 interface LinkItemProps {
   name: string;
   icon: IconType;
   path: string;
+  showBadge?: boolean;
 }
 
 const getFarmerLinks = (): Array<LinkItemProps> => [
   { name: "Dashboard", icon: Home, path: "/dashboard/farmer" },
   { name: "Inquiries", icon: Bell, path: "/dashboard/farmer/inquiries" },
   { name: "Favorites", icon: Heart, path: "/dashboard/farmer/favorites" },
-  { name: "Settings", icon: Settings, path: "/settings" },
+  { name: "Messages", icon: MessageCircle, path: "/dashboard/farmer/messages" },
+  { name: "Agreements", icon: FileText, path: "/dashboard/farmer/agreements" },
+  // { name: "Settings", icon: Settings, path: "/settings" },
 ];
 
 const getLandownerLinks = (): Array<LinkItemProps> => [
@@ -60,7 +70,23 @@ const getLandownerLinks = (): Array<LinkItemProps> => [
     icon: ChartArea,
     path: "/dashboard/landowner/analytics",
   },
-  { name: "Settings", icon: Settings, path: "/settings" },
+  {
+    name: "Messages",
+    icon: MessageCircle,
+    path: "/dashboard/landowner/messages",
+  },
+  // {
+  //   name: "Notifications",
+  //   icon: Bell,
+  //   path: "/dashboard/landowner/notifications",
+  //   showBadge: true,
+  // },
+  {
+    name: "Agreements",
+    icon: FileText,
+    path: "/dashboard/landowner/agreements",
+  },
+  // { name: "Settings", icon: Settings, path: "/settings" },
 ];
 
 interface SidebarProps {
@@ -76,12 +102,22 @@ export default function Sidebar({ children }: SidebarProps) {
 
   const navigate = useNavigate();
 
+  const { data } = useQuery({
+    queryKey: ["notifications", "unread"],
+    queryFn: () => getNotifications(),
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  const unreadCount =
+    data?.filter((notification) => !notification.read).length ?? 0;
+
   return (
     <Box minH="100vh" bg={useColorModeValue("white", "gray.900")}>
       <SidebarContent
         onClose={() => onClose}
         display={{ base: "none", md: "block" }}
         LinkItems={LinkItems}
+        unreadCount={unreadCount}
       />
       <Drawer
         isOpen={isOpen}
@@ -92,7 +128,11 @@ export default function Sidebar({ children }: SidebarProps) {
         size="full"
       >
         <DrawerContent>
-          <SidebarContent onClose={onClose} LinkItems={LinkItems} />
+          <SidebarContent
+            onClose={onClose}
+            LinkItems={LinkItems}
+            unreadCount={unreadCount}
+          />
         </DrawerContent>
       </Drawer>
 
@@ -130,29 +170,31 @@ export default function Sidebar({ children }: SidebarProps) {
         </Flex>
 
         <Flex alignItems="center" gap={4}>
-          <Menu>
-            <MenuButton
-              as={IconButton}
-              variant="ghost"
-              aria-label="Notifications"
-              icon={
-                <Box position="relative">
-                  <Bell />
-                  <Circle
-                    size="2"
-                    bg="red.500"
+          <IconButton
+            variant="ghost"
+            aria-label="Notifications"
+            icon={
+              <HStack>
+                <Bell />
+                {unreadCount > 0 && (
+                  <Badge
                     position="absolute"
-                    top="-1"
-                    right="-1"
-                  />
-                </Box>
-              }
-            />
-            <MenuList>
-              <MenuItem>New Inquiry</MenuItem>
-              <MenuItem>Message from Admin</MenuItem>
-            </MenuList>
-          </Menu>
+                    top={0}
+                    rounded={"full"}
+                    right={0}
+                    colorScheme="red"
+                    variant="solid"
+                    fontSize="xs"
+                  >
+                    {unreadCount}
+                  </Badge>
+                )}
+              </HStack>
+            }
+            onClick={() =>
+              navigate(`/dashboard/${state.user?.role}/notifications`)
+            }
+          />
 
           <Menu>
             <MenuButton as={Flex} align="center" cursor="pointer" gap={2}>
@@ -162,7 +204,7 @@ export default function Sidebar({ children }: SidebarProps) {
                   {state.user?.name}
                 </Text>
                 <Text fontSize="xs" color="gray.500">
-                  {state.user?.role}
+                  {state.user?.role.toUpperCase()}
                 </Text>
               </Box>
             </MenuButton>
@@ -195,11 +237,13 @@ export default function Sidebar({ children }: SidebarProps) {
 interface SidebarContentProps extends BoxProps {
   onClose: () => void;
   LinkItems: Array<LinkItemProps>;
+  unreadCount?: number;
 }
 
 const SidebarContent = ({
   onClose,
   LinkItems,
+  unreadCount,
   ...rest
 }: SidebarContentProps) => {
   const navigate = useNavigate();

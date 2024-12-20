@@ -16,8 +16,11 @@ export const createInquiry = async ({
       message,
     });
     return res.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating inquiry:", error);
+    if (error.response?.data) {
+      throw new Error(error.response.data);
+    }
     throw error;
   }
 };
@@ -32,9 +35,9 @@ export const getInquiresForFarmer = async (farmerId: string) => {
   }
 };
 
-export const getInquiriesForLandOwner = async (id: number) => {
+export const getInquiriesForLandOwner = async () => {
   try {
-    const res = await newRequest.get(`/inquiry/landowner/${id}`);
+    const res = await newRequest.get("/inquiry/landowner");
     return res.data;
   } catch (error) {
     console.error("Error getting landowner inquiries:", error);
@@ -44,11 +47,13 @@ export const getInquiriesForLandOwner = async (id: number) => {
 
 export const updateInquiryStatus = async (
   inquiryId: string,
-  status: string
+  status: string,
+  landId: string
 ) => {
   try {
     const res = await newRequest.put(`/inquiry/${inquiryId}/status`, {
       status,
+      landId,
     });
     return res.data;
   } catch (error) {

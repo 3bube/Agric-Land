@@ -35,7 +35,7 @@ import {
   Divider,
   Spinner,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   MapPin,
   DollarSign,
@@ -53,6 +53,7 @@ import {
   changeLandStatus,
   deleteLand,
 } from "@/utils/land.utils";
+import MapComponent from "./MapComponent";
 
 interface Listing {
   ownerId: number;
@@ -65,6 +66,7 @@ interface Listing {
   imageUrl?: string;
   description?: string;
   image?: any;
+  coordinates?: { lat: number; lng: number };
 }
 
 export function ManageListings() {
@@ -78,13 +80,21 @@ export function ManageListings() {
     refetchOnWindowFocus: false,
   });
   const [listings, setListings] = useState<Listing[]>([]);
-  const [newListing, setNewListing] = useState<Partial<Listing>>({});
+  const [newListing, setNewListing] = useState<Partial<Listing>>({
+    status: "available",
+    features: [],
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState<boolean>(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [markerPosition, setMarkerPosition] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const toast = useToast();
   const bgColor = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
+
   const FEATURES = [
     "Irrigation System",
     "Rich Soil",
@@ -94,41 +104,56 @@ export function ManageListings() {
     "Security",
   ];
 
+  const locationTimeoutRef = useRef<NodeJS.Timeout>();
+
   useEffect(() => {
     if (data) {
       setListings(data);
     }
   }, [data]);
 
-  if (isLoading) {
-    return (
-      <Flex
-        direction={"column"}
-        alignItems={"center"}
-        justify={"center"}
-        position={"fixed"}
-        top={0}
-        bottom={0}
-        left={0}
-        right={0}
-        zIndex={100}
-      >
-        <Spinner size={{ base: "sm", md: "lg" }} />
-        <Text>Loading...</Text>
-      </Flex>
-    );
-  }
+  useEffect(() => {
+    return () => {
+      if (locationTimeoutRef.current) {
+        clearTimeout(locationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const filteredListings = listings.filter((listing) => {
+    const matchesSearch = listing.title
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || listing.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "available":
+        return "green";
+      case "rented":
+        return "orange";
+      case "under-maintenance":
+        return "red";
+      default:
+        return "gray";
+    }
+  };
 
   const handleCreateListing = async () => {
     if (
       !newListing.title ||
       !newListing.location ||
       !newListing.rentalCost ||
-      !newListing.size
+      !newListing.size ||
+      !markerPosition
     ) {
       toast({
         title: "Error",
-        description: "Please fill in all required fields",
+        description:
+          "Please fill in all required fields and select a location on the map",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -148,6 +173,7 @@ export function ManageListings() {
       description: newListing.description,
       features: newListing.features,
       image: newListing.image,
+      coordinates: markerPosition,
     };
 
     try {
@@ -157,13 +183,12 @@ export function ManageListings() {
       onClose();
       toast({
         title: "Success",
-        description: "Listing created successfully",
+        description: "Listing has been created",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
     } catch (error) {
-      console.error(error);
       toast({
         title: "Error",
         description: "Failed to create listing",
@@ -183,12 +208,11 @@ export function ManageListings() {
       toast({
         title: "Deleted",
         description: "Listing has been removed",
-        status: "info",
+        status: "success",
         duration: 3000,
         isClosable: true,
       });
     } catch (error) {
-      console.error(error);
       toast({
         title: "Error",
         description: "Failed to delete listing",
@@ -214,10 +238,9 @@ export function ManageListings() {
         isClosable: true,
       });
     } catch (error) {
-      console.error(error);
       toast({
         title: "Error",
-        description: "Failed to update listing status",
+        description: "Failed to update status",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -225,46 +248,79 @@ export function ManageListings() {
     }
   };
 
-  const filteredListings = listings?.filter((listing) => {
-    const matchesSearch =
-      listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      listing.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || listing.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const handleLocationSelect = async (location: {
+    lat: number;
+    lng: number;
+  }) => {
+    setMarkerPosition(location);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lng}`
+      );
+      const data = await response.json();
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "available":
-        return "green";
-      case "rented":
-        return "blue";
-      case "under-maintenance":
-        return "orange";
-      default:
-        return "gray";
+      if (data.display_name) {
+        setNewListing({
+          ...newListing,
+          location: data.display_name,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching location name:", error);
     }
   };
 
+  const handleLocationInputChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    setNewListing({ ...newListing, location: value });
+
+    // If the user has stopped typing for 1 second, try to geocode the location
+    if (locationTimeoutRef.current) {
+      clearTimeout(locationTimeoutRef.current);
+    }
+
+    locationTimeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            value
+          )}`
+        );
+        const data = await response.json();
+
+        if (data && data[0]) {
+          const { lat, lon } = data[0];
+          setMarkerPosition({
+            lat: parseFloat(lat),
+            lng: parseFloat(lon),
+          });
+        }
+      } catch (error) {
+        console.error("Error geocoding location:", error);
+      }
+    }, 1000);
+  };
+
   return (
-    <Box bg={useColorModeValue("white", "gray.900")}>
-      <VStack spacing={6} align="stretch">
+    <Box p={4}>
+      <VStack spacing={4} align="stretch">
         <Flex justify="space-between" align="center">
-          <Heading size="lg">Manage Listings</Heading>
+          <Heading size="lg">My Listings</Heading>
           <Button
             leftIcon={<Plus className="h-4 w-4" />}
             colorScheme="blue"
             onClick={onOpen}
           >
-            Add New Listing
+            Create Listing
           </Button>
         </Flex>
 
-        <Flex gap={4} wrap="wrap">
-          <InputGroup maxW="sm">
+        <Flex gap={4} wrap={{ base: "wrap", md: "nowrap" }}>
+          <InputGroup maxW={{ base: "100%", md: "320px" }}>
             <InputLeftElement>
-              <Search className="h-4 w-4 text-gray-400" />
+              <Search className="h-4 w-4" />
             </InputLeftElement>
             <Input
               placeholder="Search listings..."
@@ -272,196 +328,230 @@ export function ManageListings() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </InputGroup>
-          <Select
-            maxW="200px"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            icon={<Filter className="h-4 w-4 text-gray-400" />}
-          >
-            <option value="all">All Status</option>
-            <option value="available">Available</option>
-            <option value="rented">Rented</option>
-            <option value="under-maintenance">Under Maintenance</option>
-          </Select>
+
+          <InputGroup maxW={{ base: "100%", md: "200px" }}>
+            <InputLeftElement>
+              <Filter className="h-4 w-4" />
+            </InputLeftElement>
+            <Select
+              pl={10}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="all">All Status</option>
+              <option value="available">Available</option>
+              <option value="rented">Rented</option>
+              <option value="under-maintenance">Under Maintenance</option>
+            </Select>
+          </InputGroup>
         </Flex>
 
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
-          {filteredListings?.map((listing) => (
-            <Card
-              key={listing._id}
-              bg={bgColor}
-              borderWidth="1px"
-              borderColor={borderColor}
-              borderRadius="lg"
-              overflow="hidden"
-              transition="all 0.2s"
-              _hover={{ shadow: "lg" }}
-            >
-              {listing.image && (
-                <Box h="200px" overflow="hidden">
-                  <img
-                    src={listing.image}
-                    alt={listing.title}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                </Box>
-              )}
-              <CardBody>
-                <VStack align="stretch" spacing={3}>
-                  <Flex justify="space-between" align="start">
-                    <Heading size="md" noOfLines={2}>
-                      {listing.title}
-                    </Heading>
-                    <Menu>
-                      <MenuButton
-                        as={IconButton}
-                        icon={<MoreVertical className="h-4 w-4" />}
-                        variant="ghost"
-                        size="sm"
-                      />
-                      <MenuList>
-                        <MenuItem
-                          onClick={() =>
-                            handleStatusChange(listing._id, "available")
-                          }
-                        >
-                          Mark Available
-                        </MenuItem>
-                        <MenuItem
-                          onClick={() =>
-                            handleStatusChange(listing._id, "rented")
-                          }
-                        >
-                          Mark Rented
-                        </MenuItem>
-                        <MenuItem
-                          onClick={() =>
-                            handleStatusChange(listing._id, "under-maintenance")
-                          }
-                        >
-                          Mark Under Maintenance
-                        </MenuItem>
-                        <Divider />
-                        <MenuItem
-                          onClick={() => handleDeleteListing(listing._id)}
-                          color="red.500"
-                        >
-                          Delete Listing
-                        </MenuItem>
-                      </MenuList>
-                    </Menu>
-                  </Flex>
+        {isLoading ? (
+          <Flex justify="center" align="center" h="200px">
+            <Spinner size="xl" />
+          </Flex>
+        ) : (
+          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4}>
+            {filteredListings.map((listing) => (
+              <Card
+                key={listing._id}
+                bg={bgColor}
+                borderColor={borderColor}
+                borderWidth={1}
+              >
+                {listing.image && (
+                  <Box h="200px" overflow="hidden">
+                    <img
+                      src={listing.image}
+                      alt={listing.title}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  </Box>
+                )}
+                <CardBody>
+                  <VStack align="stretch" spacing={3}>
+                    <Flex justify="space-between" align="start">
+                      <Text fontWeight="bold" fontSize="lg">
+                        {listing.title}
+                      </Text>
+                      <Menu>
+                        <MenuButton
+                          as={IconButton}
+                          icon={<MoreVertical />}
+                          variant="ghost"
+                          size="sm"
+                        />
+                        <MenuList>
+                          <MenuItem
+                            onClick={() =>
+                              handleStatusChange(
+                                listing._id,
+                                "under-maintenance"
+                              )
+                            }
+                          >
+                            Mark Under Maintenance
+                          </MenuItem>
+                          <MenuItem
+                            color={"red"}
+                            onClick={() => handleDeleteListing(listing._id)}
+                          >
+                            Delete
+                          </MenuItem>
+                        </MenuList>
+                      </Menu>
+                    </Flex>
 
-                  {listing.features.length > 0 && (
-                    <HStack spacing={2}>
-                      {listing.features.map((feature) => (
-                        <Badge
-                          key={feature}
-                          colorScheme="green"
-                          rounded="lg"
-                          variant="solid"
-                        >
-                          {feature}
-                        </Badge>
-                      ))}
-                    </HStack>
-                  )}
+                    {listing.features && listing.features.length > 0 && (
+                      <HStack wrap="wrap">
+                        {listing.features.map((feature) => (
+                          <Badge
+                            key={feature}
+                            colorScheme="blue"
+                            variant="subtle"
+                            rounded="full"
+                          >
+                            {feature}
+                          </Badge>
+                        ))}
+                      </HStack>
+                    )}
 
-                  <Badge
-                    colorScheme={getStatusColor(listing.status)}
-                    alignSelf="start"
-                  >
-                    {listing.status}
-                  </Badge>
+                    <Badge
+                      colorScheme={getStatusColor(listing.status)}
+                      alignSelf="start"
+                    >
+                      {listing.status}
+                    </Badge>
 
-                  <VStack align="stretch" spacing={2}>
-                    <HStack>
-                      <MapPin className="h-4 w-4" />
-                      <Text>{listing.location}</Text>
-                    </HStack>
-                    <HStack>
-                      <DollarSign className="h-4 w-4" />
-                      <Text>₦{listing.rentalCost?.toLocaleString()}/year</Text>
-                    </HStack>
-                    <HStack>
-                      <Maximize2 className="h-4 w-4" />
-                      <Text>{listing.size} acres</Text>
-                    </HStack>
+                    <VStack align="stretch" spacing={2}>
+                      <HStack>
+                        <MapPin className="h-4 w-4" />
+                        <Text>{listing.location}</Text>
+                      </HStack>
+                      <HStack>
+                        <DollarSign className="h-4 w-4" />
+                        <Text>
+                          ₦{listing.rentalCost?.toLocaleString()}/year
+                        </Text>
+                      </HStack>
+                      <HStack>
+                        <Maximize2 className="h-4 w-4" />
+                        <Text>{listing.size} acres</Text>
+                      </HStack>
+                    </VStack>
+
+                    {listing.description && (
+                      <Text color="gray.600" noOfLines={2}>
+                        {listing.description}
+                      </Text>
+                    )}
                   </VStack>
-
-                  {listing.description && (
-                    <Text color="gray.600" noOfLines={2}>
-                      {listing.description}
-                    </Text>
-                  )}
-                </VStack>
-              </CardBody>
-            </Card>
-          ))}
-        </SimpleGrid>
+                </CardBody>
+              </Card>
+            ))}
+          </SimpleGrid>
+        )}
 
         {/* Modal */}
         <Modal isOpen={isOpen} onClose={onClose} size="xl">
           <ModalOverlay />
-          <ModalContent>
+          <ModalContent maxW="900px">
             <ModalHeader>Create New Listing</ModalHeader>
             <ModalCloseButton />
             <ModalBody>
-              <Stack spacing={4}>
+              <VStack spacing={4}>
                 <FormControl isRequired>
                   <FormLabel>Title</FormLabel>
                   <Input
-                    placeholder="Enter listing title"
+                    placeholder="Enter title"
                     value={newListing.title || ""}
                     onChange={(e) =>
                       setNewListing({ ...newListing, title: e.target.value })
                     }
                   />
                 </FormControl>
+
                 <FormControl isRequired>
                   <FormLabel>Location</FormLabel>
                   <Input
-                    placeholder="Enter location"
-                    value={newListing.location || ""}
+                    placeholder="Enter location or select on map"
+                    value={newListing.location}
+                    onChange={handleLocationInputChange}
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Pin Location on Map</FormLabel>
+                  <Box
+                    h="300px"
+                    borderRadius="md"
+                    overflow="hidden"
+                    border="1px"
+                    borderColor={borderColor}
+                  >
+                    <MapComponent
+                      onSelectLocation={handleLocationSelect}
+                      initialLocation={markerPosition}
+                    />
+                  </Box>
+                  {markerPosition && (
+                    <Text fontSize="sm" mt={2} color="gray.500">
+                      Selected coordinates: {markerPosition.lat.toFixed(6)},{" "}
+                      {markerPosition.lng.toFixed(6)}
+                    </Text>
+                  )}
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Rental Cost</FormLabel>
+                  <Input
+                    type="number"
+                    placeholder="Enter rental cost"
+                    value={newListing.rentalCost || ""}
                     onChange={(e) =>
-                      setNewListing({ ...newListing, location: e.target.value })
+                      setNewListing({
+                        ...newListing,
+                        rentalCost: Number(e.target.value),
+                      })
                     }
                   />
                 </FormControl>
-                <SimpleGrid columns={2} spacing={4}>
-                  <FormControl isRequired>
-                    <FormLabel>Price (₦/year)</FormLabel>
-                    <Input
-                      type="number"
-                      placeholder="Enter price"
-                      value={newListing.rentalCost || ""}
-                      onChange={(e) =>
-                        setNewListing({
-                          ...newListing,
-                          rentalCost: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </FormControl>
-                  <FormControl isRequired>
-                    <FormLabel>Size (acres)</FormLabel>
-                    <Input
-                      type="number"
-                      placeholder="Enter size"
-                      value={newListing.size || ""}
-                      onChange={(e) =>
-                        setNewListing({
-                          ...newListing,
-                          size: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </FormControl>
-                </SimpleGrid>
+
+                <FormControl isRequired>
+                  <FormLabel>Size</FormLabel>
+                  <Input
+                    type="number"
+                    placeholder="Enter size"
+                    value={newListing.size || ""}
+                    onChange={(e) =>
+                      setNewListing({
+                        ...newListing,
+                        size: Number(e.target.value),
+                      })
+                    }
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Description</FormLabel>
+                  <Input
+                    as="textarea"
+                    placeholder="Enter description"
+                    value={newListing.description || ""}
+                    onChange={(e) =>
+                      setNewListing({
+                        ...newListing,
+                        description: e.target.value,
+                      })
+                    }
+                  />
+                </FormControl>
+
                 <FormControl>
                   <FormLabel>Features</FormLabel>
                   <HStack wrap="wrap" justify="start">
@@ -470,7 +560,7 @@ export function ManageListings() {
                         key={feature}
                         variant="solid"
                         rounded="lg"
-                        cursor={"pointer"}
+                        cursor="pointer"
                         colorScheme="blue"
                         mr={2}
                         mb={2}
@@ -514,20 +604,6 @@ export function ManageListings() {
                 </FormControl>
 
                 <FormControl>
-                  <FormLabel>Description</FormLabel>
-                  <Input
-                    as="textarea"
-                    placeholder="Enter description"
-                    value={newListing.description || ""}
-                    onChange={(e) =>
-                      setNewListing({
-                        ...newListing,
-                        description: e.target.value,
-                      })
-                    }
-                  />
-                </FormControl>
-                <FormControl>
                   <FormLabel>Status</FormLabel>
                   <Select
                     placeholder="Select status"
@@ -552,8 +628,9 @@ export function ManageListings() {
                     newListing={newListing}
                   />
                 </FormControl>
-              </Stack>
+              </VStack>
             </ModalBody>
+
             <ModalFooter>
               <Button variant="ghost" mr={3} onClick={onClose}>
                 Cancel

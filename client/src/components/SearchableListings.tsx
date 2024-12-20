@@ -42,6 +42,9 @@ import { useQuery } from "@tanstack/react-query";
 import { getAvailableLands } from "@/utils/land.utils";
 import { addFavorite } from "@/utils/favorites.utils";
 import { createInquiry } from "@/utils/inquiry.utils";
+import { getCoordinatesFromLocation } from "@/utils/geocoding";
+import MapComponent from "./MapComponent";
+import StaticMapComponent from "./StaticMapComponent";
 
 interface Listing {
   _id: string;
@@ -58,6 +61,10 @@ interface Listing {
   };
   status: string;
   createdAt: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
 }
 
 export function SearchableListings() {
@@ -66,6 +73,11 @@ export function SearchableListings() {
   const [priceRange, setPriceRange] = useState("all");
   const [inquiryMessage, setInquiryMessage] = useState("");
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [locationCoordinates, setLocationCoordinates] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
   const user = JSON.parse(sessionStorage.getItem("user") ?? "{}");
@@ -107,11 +119,11 @@ export function SearchableListings() {
         });
         onClose();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       toast({
         title: "Error",
-        description: "Failed to send inquiry",
+        description: error.response?.data ?? "Failed to send inquiry",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -145,22 +157,45 @@ export function SearchableListings() {
     }
   };
 
+  const handleShowDetails = async (listing: Listing) => {
+    setSelectedListing(listing);
+    setShowDetails(true);
+
+    // Get coordinates for the location
+    const coordinates = await getCoordinatesFromLocation(listing.location);
+    setLocationCoordinates(coordinates);
+  };
+
   const filteredListings =
     lands?.filter((listing: Listing) => {
+      // Filter out rented lands
+      if (listing.status === "rented") return false;
+
       const matchesSearch =
         listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         listing.location.toLowerCase().includes(searchTerm.toLowerCase());
+
       const matchesLocation =
         locationFilter === "all" || listing.location === locationFilter;
-      const matchesPriceRange =
-        priceRange === "all" ||
-        (priceRange === "0-50000" && listing.rentalCost <= 50000) ||
-        (priceRange === "50000-100000" &&
-          listing.rentalCost > 50000 &&
-          listing.rentalCost <= 100000) ||
-        (priceRange === "100000+" && listing.rentalCost > 100000);
 
-      return matchesSearch && matchesLocation && matchesPriceRange;
+      const listingPrice = listing.rentalCost;
+      let matchesPrice = true;
+
+      switch (priceRange) {
+        case "0-50000":
+          matchesPrice = listingPrice <= 50000;
+          break;
+        case "50000-100000":
+          matchesPrice = listingPrice > 50000 && listingPrice <= 100000;
+          break;
+        case "100000+":
+          matchesPrice = listingPrice > 100000;
+          break;
+        default:
+          matchesPrice = true;
+      }
+
+      return matchesSearch && matchesLocation && matchesPrice;
     }) ?? [];
 
   // Get unique locations for the filter
@@ -277,13 +312,20 @@ export function SearchableListings() {
           </Select>
         </Flex>
 
-        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} gap={6} minW="1000px">
           {filteredListings.map((listing: Listing) => (
             <Card
               key={listing._id}
               overflow="hidden"
               variant="outline"
               borderColor={borderColor}
+              maxW="350px"
+              onClick={() => {
+                handleShowDetails(listing);
+              }}
+              cursor="pointer"
+              _hover={{ transform: "translateY(-4px)", shadow: "lg" }}
+              transition="all 0.2s"
             >
               <Image
                 src={
@@ -295,7 +337,7 @@ export function SearchableListings() {
                 objectFit="cover"
               />
               <CardBody>
-                <VStack align="stretch" spacing={3}>
+                <VStack align="stretch" spacing={2}>
                   <Heading size="md">{listing.title}</Heading>
                   <HStack>
                     <MapPin className="h-4 w-4" />
@@ -308,13 +350,13 @@ export function SearchableListings() {
                     <Text>{listing.size} hectares</Text>
                   </HStack>
                   <Text noOfLines={2}>{listing.description}</Text>
-                  <HStack>
+                  <Flex wrap="wrap" gap={2}>
                     {listing.features?.map((feature, index) => (
                       <Badge key={index} colorScheme="blue" rounded={"full"}>
                         {feature}
                       </Badge>
                     ))}
-                  </HStack>
+                  </Flex>
                   <Text fontSize="sm" color="gray.500">
                     Owner: {listing.ownerId.name}
                   </Text>
@@ -347,6 +389,159 @@ export function SearchableListings() {
           </Box>
         )}
 
+        {/* Details Modal */}
+        <Modal
+          isOpen={showDetails}
+          onClose={() => {
+            setShowDetails(false);
+            setLocationCoordinates(null);
+          }}
+          size="4xl"
+        >
+          <ModalOverlay />
+          <ModalContent maxW="1000px">
+            <ModalHeader>{selectedListing?.title}</ModalHeader>
+            <ModalCloseButton />
+            <ModalBody pb={6}>
+              <VStack spacing={6} align="stretch">
+                <Image
+                  src={
+                    selectedListing?.image ??
+                    "https://images.unsplash.com/photo-1500382017468-9049fed747ef"
+                  }
+                  alt={selectedListing?.title}
+                  height="300px"
+                  objectFit="cover"
+                  borderRadius="md"
+                />
+
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8}>
+                  <VStack align="stretch" spacing={4}>
+                    <Box>
+                      <Heading size="sm" mb={2}>
+                        Description
+                      </Heading>
+                      <Text>{selectedListing?.description}</Text>
+                    </Box>
+
+                    <Box>
+                      <Heading size="sm" mb={2}>
+                        Features
+                      </Heading>
+                      <Flex wrap="wrap" gap={2}>
+                        {selectedListing?.features?.map((feature, index) => (
+                          <Badge
+                            key={index}
+                            colorScheme="blue"
+                            rounded="full"
+                            px={3}
+                            py={1}
+                          >
+                            {feature}
+                          </Badge>
+                        ))}
+                      </Flex>
+                    </Box>
+
+                    <Box>
+                      <Heading size="sm" mb={2}>
+                        Details
+                      </Heading>
+                      <SimpleGrid columns={2} spacing={4}>
+                        <VStack align="start">
+                          <Text color="gray.600">Location</Text>
+                          <HStack>
+                            <MapPin className="h-4 w-4" />
+                            <Text fontWeight="medium">
+                              {selectedListing?.location}
+                            </Text>
+                          </HStack>
+                        </VStack>
+                        <VStack align="start">
+                          <Text color="gray.600">Size</Text>
+                          <HStack>
+                            <Maximize2 className="h-4 w-4" />
+                            <Text fontWeight="medium">
+                              {selectedListing?.size} hectares
+                            </Text>
+                          </HStack>
+                        </VStack>
+                        <VStack align="start">
+                          <Text color="gray.600">Price</Text>
+                          <HStack>
+                            <DollarSign className="h-4 w-4" />
+                            <Text fontWeight="medium">
+                              ₦{selectedListing?.rentalCost?.toLocaleString()}
+                            </Text>
+                          </HStack>
+                        </VStack>
+                        <VStack align="start">
+                          <Text color="gray.600">Owner</Text>
+                          <Text fontWeight="medium">
+                            {selectedListing?.ownerId.name}
+                          </Text>
+                        </VStack>
+                      </SimpleGrid>
+                    </Box>
+
+                    <HStack spacing={4}>
+                      <Button
+                        leftIcon={<MessageCircle className="h-4 w-4" />}
+                        colorScheme="blue"
+                        onClick={() => {
+                          setShowDetails(false);
+                          handleInquiry(selectedListing!);
+                        }}
+                        flex={1}
+                      >
+                        Send Inquiry
+                      </Button>
+                      <IconButton
+                        aria-label="Add to favorites"
+                        icon={<Heart className="h-4 w-4" />}
+                        colorScheme="red"
+                        variant="outline"
+                        onClick={() =>
+                          handleAddToFavorites(selectedListing!._id)
+                        }
+                      />
+                    </HStack>
+                  </VStack>
+
+                  <Box>
+                    <Heading size="sm" mb={4}>
+                      Location on Map
+                    </Heading>
+                    <Box
+                      height="400px"
+                      borderRadius="md"
+                      overflow="hidden"
+                      borderWidth="1px"
+                    >
+                      {locationCoordinates ? (
+                        <StaticMapComponent
+                          coordinates={locationCoordinates}
+                          height="400px"
+                        />
+                      ) : (
+                        <Flex
+                          height="100%"
+                          align="center"
+                          justify="center"
+                          bg="gray.100"
+                        >
+                          <Text color="gray.500">Loading location...</Text>
+                        </Flex>
+                      )}
+                    </Box>
+                  </Box>
+                </SimpleGrid>
+              </VStack>
+            </ModalBody>
+          </ModalContent>
+        </Modal>
+
+        {/* Inquiry Modal */}
         <Modal isOpen={isOpen} onClose={onClose}>
           <ModalOverlay />
           <ModalContent>

@@ -26,14 +26,15 @@ const MessageSchema = new Schema(
 
 const ChatSchema = new Schema(
   {
-    participants: [{
-      type: Schema.Types.ObjectId,
-      ref: "User",
-    }],
+    participants: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     messages: [MessageSchema],
     lastMessage: {
-      type: Schema.Types.ObjectId,
-      ref: "Message",
+      type: String,
     },
   },
   { timestamps: true }
