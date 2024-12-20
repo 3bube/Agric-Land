@@ -10,12 +10,12 @@
     {
       "src": "/(.*)",
       "dest": "src/index.ts",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Origin": "https://agric-land.vercel.app",
-        "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
-        "Access-Control-Allow-Credentials": "true"
-      }
+      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
     }
-  ]
+  ],
+  "env": {
+    "MONGODB_URI": "@mongodb_uri",
+    "JWT_SECRET": "@jwt_secret"
+  },
+  "regions": ["cdg1"]
 }

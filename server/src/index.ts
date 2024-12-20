@@ -47,11 +47,19 @@ const MONGODB_URI = process.env.MONGODB_URI;
 
 // function to connect to MongoDB
 const connectToMongoDB = async () => {
+  if (!MONGODB_URI) {
+    console.error("MONGODB_URI is not defined");
+    process.exit(1);
+  }
   try {
-    await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 10000, // 10 seconds
+      socketTimeoutMS: 45000, // 45 seconds
+    });
     console.log("Connected to MongoDB");
   } catch (error) {
     console.error("MongoDB connection error:", error);
+    process.exit(1);
   }
 };
 
@@ -79,12 +87,7 @@ const wsServer = new WebSocketServer(httpServer);
 app.set("io", wsServer);
 
 // Start server
-httpServer.listen(port, async () => {
-  try {
-    await connectToMongoDB();
-    console.log(`Server is running on port ${port}`);
-  } catch (error) {
-    console.error("Failed to start server:", error);
-    process.exit(1);
-  }
+httpServer.listen(port, () => {
+  connectToMongoDB();
+  console.log(`Server is running on port ${port}`);
 });
