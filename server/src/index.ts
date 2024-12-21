@@ -17,7 +17,7 @@ const corsOptions = {
   ) {
     const allowedOrigins = [
       "http://localhost:5173",
-      "https://agric-land.vercel.app"
+      "https://agric-land.vercel.app",
     ];
 
     if (!origin || allowedOrigins.includes(origin)) {
@@ -41,8 +41,8 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // Catch-all route
-app.get('*', (req: Request, res: Response) => {
-  res.status(200).send('Agric Land Server is running');
+app.get("*", (req: Request, res: Response) => {
+  res.status(200).send("Agric Land Server is running");
 });
 
 // MongoDB connection
@@ -52,7 +52,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(MONGODB_URI);
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log("MongoDB Connected");
   } catch (error) {
     console.error("MongoDB connection error:", error.message);
     process.exit(1); // Exit with failure
@@ -83,7 +83,7 @@ const wsServer = new WebSocketServer(httpServer);
 app.set("io", wsServer);
 
 // Start server
-httpServer.listen(port, () => {
-  connectDB();
+httpServer.listen(port, async () => {
+  await connectDB();
   console.log(`Server is running on port ${port}`);
 });
