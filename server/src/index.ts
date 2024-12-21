@@ -18,11 +18,10 @@ const corsOptions = {
     const allowedOrigins = [
       "http://localhost:5173",
       "https://agric-land.vercel.app",
-      "https://www.agric-land.vercel.app",
       "https://agric-land-backend.vercel.app"
     ];
 
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
@@ -30,7 +29,7 @@ const corsOptions = {
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 };
 
 // Middleware
