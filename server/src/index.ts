@@ -11,25 +11,10 @@ const port = process.env.PORT || 5000;
 
 // CORS configuration
 const corsOptions = {
-  origin: function (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
-  ) {
-    const allowedOrigins = [
-      "http://localhost:5173",
-      "https://agric-land.vercel.app",
-      "https://agric-land-backend.vercel.app"
-    ];
-
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: ["http://localhost:5173", "https://agric-land.vercel.app"],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 // Middleware
@@ -41,24 +26,22 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello from Agric Land Server!");
 });
 
+// Catch-all route
+app.get('*', (req: Request, res: Response) => {
+  res.status(200).send('Agric Land Server is running');
+});
+
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // function to connect to MongoDB
-const connectToMongoDB = async () => {
-  if (!MONGODB_URI) {
-    console.error("MONGODB_URI is not defined");
-    process.exit(1);
-  }
+const connectDB = async () => {
   try {
-    await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 10000, // 10 seconds
-      socketTimeoutMS: 45000, // 45 seconds
-    });
-    console.log("Connected to MongoDB");
+    const conn = await mongoose.connect(MONGODB_URI);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error("MongoDB connection error:", error);
-    process.exit(1);
+    console.error("MongoDB connection error:", error.message);
+    process.exit(1); // Exit with failure
   }
 };
 
@@ -87,6 +70,6 @@ app.set("io", wsServer);
 
 // Start server
 httpServer.listen(port, () => {
-  connectToMongoDB();
+  connectDB();
   console.log(`Server is running on port ${port}`);
 });

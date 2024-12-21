@@ -9,13 +9,11 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "src/index.ts",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Origin": "https://agric-land.vercel.app",
-        "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept, Authorization",
-        "Access-Control-Allow-Credentials": "true"
-      }
+      "dest": "src/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "src/index.ts"
     }
   ]
 }
