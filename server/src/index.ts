@@ -40,18 +40,16 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Hello from Agric Land Server!");
 });
 
-// Catch-all route
-app.get("*", (req: Request, res: Response) => {
-  res.status(200).send("Agric Land Server is running");
-});
-
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // function to connect to MongoDB
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     console.log("MongoDB Connected");
   } catch (error) {
     console.error("MongoDB connection error:", error.message);
