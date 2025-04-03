@@ -16,6 +16,8 @@ const corsOptions = {
   credentials: true,
 };
 
+app.options("*", cors(corsOptions));
+
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json());
