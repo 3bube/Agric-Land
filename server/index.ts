@@ -10,25 +10,10 @@ const app: Express = express();
 const port = process.env.PORT || 5000;
 
 // CORS configuration
+// CORS configuration
 const corsOptions = {
-  origin: function (
-    origin: string | undefined,
-    callback: (err: Error | null, allow?: boolean) => void
-  ) {
-    const allowedOrigins = [
-      "http://localhost:5173",
-      "https://agric-land.vercel.app",
-    ];
-
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
+  origin: true, // This will echo back the requesting origin
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 // Middleware
