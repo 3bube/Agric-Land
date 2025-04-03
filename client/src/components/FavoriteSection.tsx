@@ -126,14 +126,16 @@ export function FavoritesSection() {
       </Heading>
       <Flex flexWrap="wrap" gap={4}>
         {favorites?.map(({ land: favorite }) => (
-          <Card key={favorite._id} maxW="sm">
+          <Card key={favorite?._id} maxW="sm">
             <CardHeader>
-              <Heading size="md">{favorite.title}</Heading>
-              <Text fontSize="sm">{favorite.location}</Text>
+              <Heading size="md">{favorite?.title}</Heading>
+              <Text fontSize="sm">{favorite?.location}</Text>
             </CardHeader>
             <CardBody>
-              <Text>Size: {favorite.size} acres</Text>
-              <Text>Price: ₦{favorite.rentalCost?.toLocaleString()}/month</Text>
+              <Text>Size: {favorite?.size} acres</Text>
+              <Text>
+                Price: ₦{favorite?.rentalCost?.toLocaleString()}/month
+              </Text>
             </CardBody>
             <CardFooter justifyContent="space-between" alignItems="center">
               <Button
@@ -182,7 +184,7 @@ export function FavoritesSection() {
                   <Text fontWeight="bold" mt={2}>
                     Description:
                   </Text>
-                  <Text>{selectedListing.description}</Text>
+                  <Text>{selectedListing?.description}</Text>
                 </>
               )}
 
@@ -191,7 +193,7 @@ export function FavoritesSection() {
                   <Text fontWeight="bold" mt={2}>
                     Features:
                   </Text>
-                  {selectedListing.features.map((feature) => (
+                  {selectedListing?.features?.map((feature) => (
                     <Badge key={feature} colorScheme="green" mr={2}>
                       {feature}
                     </Badge>

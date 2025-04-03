@@ -3,7 +3,6 @@ import {
   Button,
   Card,
   CardBody,
-  CardFooter,
   CardHeader,
   Flex,
   Heading,
@@ -55,6 +54,16 @@ export function InquiryTracker() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  if (inquiries?.length === 0) {
+    return (
+      <Box className="space-y-6">
+        <Heading as="h2" size="lg" fontWeight="bold">
+          No inquiries found
+        </Heading>
+      </Box>
+    );
+  }
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -68,15 +77,15 @@ export function InquiryTracker() {
         <Card key={inquiry._id} variant="outline">
           <CardHeader>
             <Heading as="h5" size="sm">
-              {inquiry.land.title}
+              {inquiry.land?.title}
             </Heading>
             <Text color={useColorModeValue("gray.600", "gray.400")}>
-              Landowner: {inquiry.land.ownerId.name}
+              Landowner: {inquiry.land?.ownerId.name}
             </Text>
           </CardHeader>
           <CardBody>
             <Text color={useColorModeValue("gray.600", "gray.400")} mb={2}>
-              Inquiry: {inquiry.message}
+              Inquiry: {inquiry?.message}
             </Text>
 
             <Flex justify="space-between" align="center">
@@ -96,7 +105,7 @@ export function InquiryTracker() {
                     : "red"
                 }
               >
-                {inquiry.status}
+                {inquiry?.status}
               </Button>
               {inquiry.response && (
                 <Text color={useColorModeValue("gray.600", "gray.400")}>

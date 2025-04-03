@@ -3,9 +3,7 @@ import axios from "axios";
 const isDevelopment = window.location.hostname === "localhost";
 
 const newRequest = axios.create({
-  baseURL: isDevelopment
-    ? "http://localhost:5000/api"
-    : "https://agric-land-backend.vercel.app/api",
+  baseURL: "http://localhost:5000/api",
   withCredentials: true,
 });
 

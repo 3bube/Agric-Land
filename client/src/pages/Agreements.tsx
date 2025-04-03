@@ -185,17 +185,17 @@ export default function Agreements() {
               <Card>
                 <CardHeader>
                   <VStack align="stretch" spacing={2}>
-                    <Heading size="md">{rental.land.title}</Heading>
+                    <Heading size="md">{rental?.land?.title}</Heading>
                     <HStack justify="space-between">
                       <Badge colorScheme={getStatusColor(rental.status)}>
                         {rental.status.toUpperCase()}
                       </Badge>
                       <Badge
                         colorScheme={getPaymentStatusColor(
-                          rental.paymentStatus
+                          rental?.paymentStatus
                         )}
                       >
-                        {rental.paymentStatus.toUpperCase()}
+                        {rental?.paymentStatus.toUpperCase()}
                       </Badge>
                     </HStack>
                   </VStack>
@@ -217,14 +217,14 @@ export default function Agreements() {
                       </Text>
                       <Text>
                         {user.role === "farmer"
-                          ? rental.landowner.name
-                          : rental.farmer.name}
+                          ? rental?.landowner?.name
+                          : rental?.farmer?.name}
                       </Text>
                     </Box>
 
                     <Box>
                       <Text fontWeight="bold">Rental Amount</Text>
-                      <Text>${rental.rentalAmount}</Text>
+                      <Text>${rental?.rentalAmount}</Text>
                     </Box>
 
                     <Box>
@@ -232,13 +232,15 @@ export default function Agreements() {
                       <HStack>
                         <Badge
                           colorScheme={
-                            rental.signedByLandowner ? "green" : "gray"
+                            rental?.signedByLandowner ? "green" : "gray"
                           }
                         >
                           Landowner
                         </Badge>
                         <Badge
-                          colorScheme={rental.signedByFarmer ? "green" : "gray"}
+                          colorScheme={
+                            rental?.signedByFarmer ? "green" : "gray"
+                          }
                         >
                           Farmer
                         </Badge>
@@ -310,10 +312,10 @@ export default function Agreements() {
                   <Text fontWeight="bold" mb={1}>
                     Property
                   </Text>
-                  <Text>{selectedRental.land.title}</Text>
-                  <Text color="gray.600">{selectedRental.land.location}</Text>
+                  <Text>{selectedRental?.land?.title}</Text>
+                  <Text color="gray.600">{selectedRental?.land?.location}</Text>
                   <Text color="gray.600">
-                    {selectedRental.land.size} hectares
+                    {selectedRental?.land?.size} hectares
                   </Text>
                 </Box>
 
@@ -322,8 +324,12 @@ export default function Agreements() {
                     Rental Period
                   </Text>
                   <Text>
-                    {format(new Date(selectedRental.startDate), "MMM dd, yyyy")}{" "}
-                    - {format(new Date(selectedRental.endDate), "MMM dd, yyyy")}
+                    {format(
+                      new Date(selectedRental?.startDate),
+                      "MMM dd, yyyy"
+                    )}{" "}
+                    -{" "}
+                    {format(new Date(selectedRental?.endDate), "MMM dd, yyyy")}
                   </Text>
                 </Box>
 
@@ -331,8 +337,8 @@ export default function Agreements() {
                   <Text fontWeight="bold" mb={1}>
                     Parties
                   </Text>
-                  <Text>Landowner: {selectedRental.landowner.name}</Text>
-                  <Text>Farmer: {selectedRental.farmer.name}</Text>
+                  <Text>Landowner: {selectedRental?.landowner?.name}</Text>
+                  <Text>Farmer: {selectedRental?.farmer?.name}</Text>
                 </Box>
 
                 <Box>
@@ -341,17 +347,17 @@ export default function Agreements() {
                   </Text>
                   <Text>
                     Rental Amount: ₦
-                    {selectedRental.rentalAmount.toLocaleString()}
+                    {selectedRental?.rentalAmount.toLocaleString()}
                   </Text>
                   <HStack spacing={2} mt={2}>
                     <Badge
                       colorScheme={getPaymentStatusColor(
-                        selectedRental.paymentStatus
+                        selectedRental?.paymentStatus
                       )}
                     >
-                      {selectedRental.paymentStatus.toUpperCase()}
+                      {selectedRental?.paymentStatus?.toUpperCase()}
                     </Badge>
-                    {user.role === "landowner" && (
+                    {user?.role === "landowner" && (
                       <Menu>
                         <MenuButton
                           as={Button}
@@ -410,26 +416,26 @@ export default function Agreements() {
                     Agreement Status
                   </Text>
                   <HStack>
-                    <Badge colorScheme={getStatusColor(selectedRental.status)}>
-                      {selectedRental.status.toUpperCase()}
+                    <Badge colorScheme={getStatusColor(selectedRental?.status)}>
+                      {selectedRental?.status?.toUpperCase()}
                     </Badge>
                     <Badge
                       colorScheme={
-                        selectedRental.signedByLandowner ? "green" : "gray"
+                        selectedRental?.signedByLandowner ? "green" : "gray"
                       }
                     >
                       Landowner{" "}
-                      {selectedRental.signedByLandowner
+                      {selectedRental?.signedByLandowner
                         ? "Signed"
                         : "Not Signed"}
                     </Badge>
                     <Badge
                       colorScheme={
-                        selectedRental.signedByFarmer ? "green" : "gray"
+                        selectedRental?.signedByFarmer ? "green" : "gray"
                       }
                     >
                       Farmer{" "}
-                      {selectedRental.signedByFarmer ? "Signed" : "Not Signed"}
+                      {selectedRental?.signedByFarmer ? "Signed" : "Not Signed"}
                     </Badge>
                   </HStack>
                 </Box>
@@ -438,7 +444,7 @@ export default function Agreements() {
                   <Text fontWeight="bold" mb={1}>
                     Terms and Conditions
                   </Text>
-                  <Text whiteSpace="pre-wrap">{selectedRental.terms}</Text>
+                  <Text whiteSpace="pre-wrap">{selectedRental?.terms}</Text>
                 </Box>
 
                 <Box>
@@ -447,7 +453,7 @@ export default function Agreements() {
                   </Text>
                   <Text>
                     {format(
-                      new Date(selectedRental.createdAt),
+                      new Date(selectedRental?.createdAt),
                       "MMMM dd, yyyy"
                     )}
                   </Text>
