@@ -37,6 +37,11 @@ app.use(cookieParser());
 // Make io available in req
 app.set("io", io);
 
+// health
+app.get("/", (req, res) => {
+  res.send("Server is running");
+});
+
 // Routes
 app.use("/api/auth", authRoute);
 app.use("/api/users", userRoute);
