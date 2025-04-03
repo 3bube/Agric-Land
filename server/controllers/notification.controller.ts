@@ -1,9 +1,10 @@
 import Notification from "../models/notification.model";
 import { Request, Response, NextFunction } from "express";
 import { handleError, handleSuccess } from "../utils/handler";
+import { AuthRequest } from "../types/AuthRequest";
 
 export const createNotification = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -16,12 +17,12 @@ export const createNotification = async (
 };
 
 export const getNotifications = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user?._id;
     const notifications = await Notification.find({ receiver: userId });
     handleSuccess(notifications, res);
   } catch (error) {
@@ -30,7 +31,7 @@ export const getNotifications = async (
 };
 
 export const markNotificationAsRead = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {

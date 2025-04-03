@@ -1,4 +1,18 @@
-import { Schema, model } from "mongoose";
+import { Document, Schema, model, Types } from "mongoose";
+import { ILand } from "./Inquiry.model";
+interface RentalDocument extends Document {
+  land: ILand;
+  farmer: Types.ObjectId;
+  landowner: Types.ObjectId;
+  startDate: Date;
+  endDate: Date;
+  rentalAmount: number;
+  paymentStatus: "pending" | "paid" | "overdue";
+  status: "active" | "completed" | "terminated";
+  terms: string;
+  signedByFarmer: boolean;
+  signedByLandowner: boolean;
+}
 
 const RentalSchema = new Schema(
   {
@@ -55,4 +69,4 @@ const RentalSchema = new Schema(
   { timestamps: true }
 );
 
-export default model("Rental", RentalSchema);
+export default model<RentalDocument>("Rental", RentalSchema);

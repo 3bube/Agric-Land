@@ -4,16 +4,17 @@ import Inquiry from "../models/Inquiry.model";
 import Land from "../models/land.model";
 import Notification from "../models/notification.model";
 import { handleError, handleSuccess, handleNotFound } from "../utils/handler";
+import { AuthRequest } from "../types/AuthRequest";
 
 // Create rental agreement from accepted inquiry
 export const createRental = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { inquiryId, startDate, endDate, rentalAmount, terms } = req.body;
-    const userId = req.user._id;
+    const userId = req.user?._id;
 
     // Get the inquiry
     const inquiry = await Inquiry.findById(inquiryId).populate([
@@ -22,11 +23,11 @@ export const createRental = async (
     ]);
 
     if (!inquiry) {
-      return handleNotFound("Inquiry not found", res, next);
+      return handleNotFound(res, "Inquiry not found", next);
     }
 
     // Verify landowner
-    if (inquiry.land.ownerId.toString() !== userId.toString()) {
+    if (inquiry.land.ownerId.toString() !== userId?.toString()) {
       return handleError(
         new Error("Not authorized to create rental agreement"),
         res,
@@ -79,13 +80,13 @@ export const createRental = async (
 
 // Sign rental agreement (for farmer)
 export const signRental = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { rentalId } = req.params;
-    const userId = req.user._id;
+    const userId = req.user?._id;
 
     const rental = await Rental.findById(rentalId).populate([
       { path: "landowner", select: "name email" },
@@ -93,11 +94,11 @@ export const signRental = async (
     ]);
 
     if (!rental) {
-      return handleNotFound("Rental agreement not found", res, next);
+      return handleNotFound(res, "Rental agreement not found", next);
     }
 
     // Verify farmer
-    if (rental.farmer.toString() !== userId.toString()) {
+    if (rental.farmer.toString() !== userId?.toString()) {
       return handleError(
         new Error("Not authorized to sign this agreement"),
         res,
@@ -133,13 +134,13 @@ export const signRental = async (
 
 // Get rentals for user (both farmer and landowner)
 export const getRentals = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user._id;
-    const userRole = req.user.role;
+    const userId = req.user?._id;
+    const userRole = req.user?.role;
 
     const query =
       userRole === "farmer" ? { farmer: userId } : { landowner: userId };
@@ -160,14 +161,14 @@ export const getRentals = async (
 
 // Update rental status
 export const updateRentalStatus = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { rentalId } = req.params;
     const { status } = req.body;
-    const userId = req.user._id;
+    const userId = req.user?._id;
 
     const rental = await Rental.findById(rentalId).populate([
       { path: "farmer", select: "name email" },
@@ -175,11 +176,11 @@ export const updateRentalStatus = async (
     ]);
 
     if (!rental) {
-      return handleNotFound("Rental agreement not found", res, next);
+      return handleNotFound(res, "Rental agreement not found", next);
     }
 
     // Verify landowner
-    if (rental.landowner.toString() !== userId.toString()) {
+    if (rental.landowner.toString() !== userId?.toString()) {
       return handleError(
         new Error("Not authorized to update rental status"),
         res,
@@ -223,14 +224,14 @@ export const updateRentalStatus = async (
 
 // Update payment status
 export const updatePaymentStatus = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { rentalId } = req.params;
     const { paymentStatus } = req.body;
-    const userId = req.user._id;
+    const userId = req.user?._id;
 
     const rental = await Rental.findById(rentalId).populate([
       { path: "farmer", select: "name email" },
@@ -238,11 +239,11 @@ export const updatePaymentStatus = async (
     ]);
 
     if (!rental) {
-      return handleNotFound("Rental agreement not found", res, next);
+      return handleNotFound(res, "Rental agreement not found", next);
     }
 
     // Verify landowner
-    if (rental.landowner.toString() !== userId.toString()) {
+    if (rental.landowner.toString() !== userId?.toString()) {
       return handleError(
         new Error("Not authorized to update payment status"),
         res,

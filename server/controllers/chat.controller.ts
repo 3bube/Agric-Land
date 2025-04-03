@@ -2,15 +2,16 @@ import { Request, Response, NextFunction } from "express";
 import { Chat, Message } from "../models/chat.model";
 import Notification from "../models/notification.model";
 import { handleError, handleSuccess, handleNotFound } from "../utils/handler";
+import { AuthRequest } from "../types/AuthRequest";
 
 export const createOrGetChat = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { participantId } = req.body;
-    const userId = req.user._id;
+    const userId = req.user?._id;
 
     // Check if chat already exists
     let chat = await Chat.findOne({
@@ -33,13 +34,13 @@ export const createOrGetChat = async (
 };
 
 export const sendMessage = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { chatId, content } = req.body;
-    const userId = req.user._id;
+    const userId = req.user?._id;
 
     const chat = await Chat.findById(chatId);
 
@@ -49,7 +50,7 @@ export const sendMessage = async (
 
     // Find the receiver ID (the participant that is not the sender)
     const receiverId = chat.participants.find(
-      (participantId) => participantId.toString() !== userId.toString()
+      (participantId) => participantId.toString() !== userId?.toString()
     );
 
     if (!receiverId) {
@@ -102,7 +103,7 @@ export const sendMessage = async (
 };
 
 export const getMessages = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
@@ -123,12 +124,12 @@ export const getMessages = async (
 };
 
 export const getUserChats = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?._id;
     const chats = await Chat.find({ participants: userId })
       .populate("participants", "name email")
       .populate("lastMessage")
@@ -141,7 +142,7 @@ export const getUserChats = async (
 };
 
 export const markMessageAsRead = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {

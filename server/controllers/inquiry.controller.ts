@@ -2,22 +2,23 @@ import { Request, Response, NextFunction } from "express";
 import Inquiry from "../models/Inquiry.model";
 import Notification from "../models/notification.model";
 import { handleError, handleSuccess, handleNotFound } from "../utils/handler";
+import { AuthRequest } from "../types/AuthRequest";
 
 // Create a new inquiry
 export const createInquiry = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { farmer, land, message } = req.body;
-    const userId = req.user._id;
+    const userId = req.user?._id;
 
     // Check if farmer already has an active inquiry for this land
     const existingInquiry = await Inquiry.findOne({
       farmer,
       land,
-      status: { $in: ["pending", "accepted"] }
+      status: { $in: ["pending", "accepted"] },
     });
 
     if (existingInquiry) {
@@ -54,7 +55,10 @@ export const createInquiry = async (
     // Emit notification
     const io = req.app.get("io");
     if (io) {
-      io.emitToUser(populatedInquiry.land.ownerId.toString(), "new_notification");
+      io.emitToUser(
+        populatedInquiry.land.ownerId.toString(),
+        "new_notification"
+      );
     }
 
     handleSuccess(populatedInquiry, res);
@@ -86,12 +90,12 @@ export const getInquiriesForFarmer = async (
 
 // Get inquiries for a landowner
 export const getInquiriesForLandOwner = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user?._id;
     const inquiries = await Inquiry.find()
       .populate([
         { path: "farmer", select: "name email" },
@@ -116,22 +120,21 @@ export const getInquiriesForLandOwner = async (
 
 // Update inquiry status
 export const updateInquiryStatus = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   try {
     const { inquiryId } = req.params;
     const { status, landId } = req.body;
-    const userId = req.user._id;
+    const userId = req.user?._id;
 
     const inquiry = await Inquiry.findById(inquiryId).populate([
       { path: "farmer", select: "name email" },
       { path: "land", select: "title ownerId" },
     ]);
-
     if (!inquiry) {
-      return handleNotFound("Inquiry not found", res, next);
+      return handleNotFound(res, "Inquiry not found", next);
     }
 
     inquiry.status = status;

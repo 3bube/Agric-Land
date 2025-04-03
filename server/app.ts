@@ -62,11 +62,18 @@ io.on("connection", (socket) => {
 });
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const errorStatus = err.status || 500;
-  const errorMessage = err.message || "Something went wrong!";
-  return res.status(errorStatus).send(errorMessage);
-});
+app.use(
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    const errorStatus = err.status ?? 500;
+    const errorMessage = err.message ?? "Something went wrong!";
+    return res.status(errorStatus).send(errorMessage);
+  }
+);
 
 // Database connection
 mongoose
