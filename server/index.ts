@@ -56,12 +56,16 @@ if (!MONGODB_URI) {
 }
 
 // Connect to MongoDB
+// In your connectDB function
 const connectDB = async () => {
   try {
+    console.log("Attempting to connect to MongoDB...");
+    console.log("MongoDB URI:", MONGODB_URI?.substring(0, 15) + "..."); // Log partial URI for debugging (hide credentials)
     await mongoose.connect(MONGODB_URI);
-    console.log("MongoDB Connected");
+    console.log("MongoDB Connected Successfully!");
   } catch (error) {
     console.error("MongoDB connection error:", (error as Error).message);
+    console.error("Full error:", error);
     process.exit(1);
   }
 };
