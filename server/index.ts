@@ -10,16 +10,20 @@ const app: Express = express();
 const port = process.env.PORT || 5000;
 
 // CORS configuration
-// CORS configuration
-const corsOptions = {
-  origin: true, // This will echo back the requesting origin
-  credentials: true,
-};
+// Simplest CORS configuration - allow all origins with no credentials
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  next();
+});
 
-app.options("*", cors(corsOptions));
+// Handle OPTIONS requests
+app.options("*", (req, res) => {
+  res.sendStatus(200);
+});
 
 // Middleware
-app.use(cors(corsOptions));
 app.use(express.json());
 
 // Routes
