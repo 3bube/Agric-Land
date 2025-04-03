@@ -3,7 +3,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { createServer } from "http";
-import { WebSocketServer } from "./websocket";
+import { WebSocketServer } from "./src/websocket";
 
 dotenv.config();
 const app: Express = express();
@@ -58,13 +58,13 @@ const connectDB = async () => {
   }
 };
 
-import authRoute from "../routes/auth.route";
-import landRoute from "../routes/land.route";
-import favoriteRoute from "../routes/favorites.route";
-import inquiryRoute from "../routes/inquiry.route";
-import chatRoute from "../routes/chat.route";
-import notificationRoute from "../routes/notification.route";
-import rentalRoute from "../routes/rental.route";
+import authRoute from "./routes/auth.route";
+import landRoute from "./routes/land.route";
+import favoriteRoute from "./routes/favorites.route";
+import inquiryRoute from "./routes/inquiry.route";
+import chatRoute from "./routes/chat.route";
+import notificationRoute from "./routes/notification.route";
+import rentalRoute from "./routes/rental.route";
 
 app.use("/api/auth", authRoute);
 app.use("/api/land", landRoute);
