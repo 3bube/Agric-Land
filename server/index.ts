@@ -70,6 +70,20 @@ const connectDB = async () => {
   }
 };
 
+app.get("/api/db-status", async (req, res) => {
+  try {
+    // Check if mongoose is connected
+    const isConnected = mongoose.connection.readyState === 1;
+    res.json({
+      connected: isConnected,
+      status: isConnected ? "Connected" : "Disconnected",
+      readyState: mongoose.connection.readyState,
+    });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 // Create HTTP server
 const httpServer = createServer(app);
 
