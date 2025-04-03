@@ -64,13 +64,25 @@ if (!MONGODB_URI) {
 const connectDB = async () => {
   try {
     console.log("Attempting to connect to MongoDB...");
-    console.log("MongoDB URI:", MONGODB_URI?.substring(0, 15) + "..."); // Log partial URI for debugging (hide credentials)
-    await mongoose.connect(MONGODB_URI);
+
+    // Add connection options for better reliability
+    const options = {
+      serverSelectionTimeoutMS: 5000, // Faster timeout for server selection
+      connectTimeoutMS: 10000,
+      socketTimeoutMS: 30000,
+    };
+
+    await mongoose.connect(MONGODB_URI, options);
     console.log("MongoDB Connected Successfully!");
+    return true;
   } catch (error) {
     console.error("MongoDB connection error:", (error as Error).message);
-    console.error("Full error:", error);
-    process.exit(1);
+    // Don't exit process in production
+    if (process.env.NODE_ENV === "production") {
+      return false;
+    } else {
+      process.exit(1);
+    }
   }
 };
 
@@ -97,8 +109,8 @@ app.set("io", wsServer);
 
 // Start server
 httpServer.listen(port, async () => {
-  await connectDB();
   console.log(`Server is running on port ${port}`);
+  connectDB();
 });
 
 export default app;
