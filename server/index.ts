@@ -51,6 +51,10 @@ app.use("/api/rentals", rentalRoute);
 // MongoDB connection
 const MONGODB_URI = process.env.MONGODB_URI;
 
+app.get("/uri", async (req, res) => {
+  res.json({ uri: MONGODB_URI });
+});
+
 if (!MONGODB_URI) {
   throw new Error("Please provide MONGODB_URI in the environment variables");
 }
