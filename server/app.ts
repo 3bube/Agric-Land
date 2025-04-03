@@ -1,18 +1,18 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
+// import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import mongoose from "mongoose";
 
 // Route imports
 import authRoute from "./routes/auth.route";
-import userRoute from "./routes/user.route";
+// import userRoute from "./routes/user.route";
 import landRoute from "./routes/land.route";
 import inquiryRoute from "./routes/inquiry.route";
 import chatRoute from "./routes/chat.route";
-import messageRoute from "./routes/message.route";
+// import messageRoute from "./routes/message.route";
 import notificationRoute from "./routes/notification.route";
 import rentalRoute from "./routes/rental.route";
 
@@ -32,7 +32,7 @@ const io = new Server(httpServer, {
 // Middleware
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json());
-app.use(cookieParser());
+// app.use(cookieParser());
 
 // Make io available in req
 app.set("io", io);
@@ -44,11 +44,11 @@ app.get("/", (req, res) => {
 
 // Routes
 app.use("/api/auth", authRoute);
-app.use("/api/users", userRoute);
+// app.use("/api/users", userRoute);
 app.use("/api/lands", landRoute);
 app.use("/api/inquiries", inquiryRoute);
 app.use("/api/chats", chatRoute);
-app.use("/api/messages", messageRoute);
+// app.use("/api/messages", messageRoute);
 app.use("/api/notifications", notificationRoute);
 app.use("/api/rentals", rentalRoute);
 
